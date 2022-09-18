@@ -31,8 +31,33 @@ void Server::close() {
 }
 
 void Server::connectionHandler(Connection connection) {
-	while (1) {
-		printf("hand %u\n", connection.id);
-		Sleep(2000);
+	thread newConnectionThread(pingHandler, connection);
+	newConnectionThread.join();
+}
+
+void Server::pingHandler(Connection connection) {
+	while (connection.isConnected()) {
+		connection.send_(Action::ping);
+		clock_t pingTime = clock();
+		cout << "sent" << endl;
+		while (1) {
+			Action act = connection.recv_();
+			cout << "recv: " << (int)act << endl;
+			if (act == Action::pong) break;
+		}
+		double pongTime = (double)(clock() - pingTime);
+		cout << "pongTime: " << pongTime << endl;
+		/*uint8_t pingArr[8];
+		Action act = connection.recv_(pingArr, 3);
+		if (act != Action::ping) continue;
+		milliseconds ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+		uint64_t ms_ = ms.count();
+		uint64_t connectionTime = 0;
+		for (size_t i = 0; i < 7; i++) {
+			connectionTime += pingArr[i + 1] * (uint64_t)pow(100, 6 - i);
+		}
+		uint64_t delta = ms_ - connectionTime;
+		cout << "ms_: " << ms_ << ", connectionTime: " << connectionTime << ", delta: " << delta << endl;*/
+		Sleep(1000);
 	}
 }

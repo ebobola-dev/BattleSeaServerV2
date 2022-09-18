@@ -3,14 +3,17 @@
 #pragma comment (lib, "ws2_32.lib")
 #include <iostream>
 #include <thread>
+#include "winsock2.h"
 #include <windows.h>
 #include <vector>
-#include <chrono>
-#include "winsock2.h"
+//#include <chrono>
+//#include <cmath>
+#include <time.h>
 
 #include "Connection.h"
 
 using namespace std;
+using namespace std::chrono;
 
 class Server {
 	SOCKET thisSocket;
@@ -25,5 +28,6 @@ public:
 	void close();
 
 	static void connectionHandler(Connection);
+	static void pingHandler(Connection);
 };
 

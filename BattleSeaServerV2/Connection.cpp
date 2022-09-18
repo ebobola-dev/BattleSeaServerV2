@@ -1,13 +1,17 @@
 #include "Connection.h"
 
 Connection::Connection() : id(0) {
-	this->socket = INVALID_SOCKET;
+	this->socket_ = INVALID_SOCKET;
+	this->connected = false;
 }
 
-Connection::Connection(SOCKET socket, sockaddr_in addr) : id(addr.sin_port) {
-	this->addr = addr;
-	this->socket = socket;
+Connection::Connection(SOCKET socket_, sockaddr_in addr_) : id(addr_.sin_port) {
+	this->connected = true;
+	this->addr_ = addr_;
+	this->socket_ = socket_;
 }
+
+bool Connection::isConnected() const { return connected; }
 
 void Connection::send_(Action action, uint8_t* byteArr, size_t arrSize) {
 	char* charArr = new char[arrSize + 1];
@@ -15,17 +19,24 @@ void Connection::send_(Action action, uint8_t* byteArr, size_t arrSize) {
 	for (size_t i = 0; i < arrSize; i++) {
 		charArr[i + 1] = byteArr[i];
 	}
-	send(socket, charArr, arrSize + 1, 0);
+	send(socket_, charArr, arrSize + 1, 0);
 }
 
 Action Connection::recv_(uint8_t* byteArr, size_t arrSize) {
 	char charArr[MAX_BYTE_ARR_SIZE];
-	recv(socket, &charArr[0], MAX_BYTE_ARR_SIZE, 0);
+	int8_t bytesRecieved = recv(socket_, &charArr[0], MAX_BYTE_ARR_SIZE, 0);
 
-	for (size_t i = 0; i < MAX_BYTE_ARR_SIZE; i++)
-		byteArr[i] = charArr[i];
+	if (arrSize > 0) {
+		for (size_t i = 0; i < MAX_BYTE_ARR_SIZE; i++)
+			byteArr[i] = charArr[i];
+	}
 
 	if (charArr[0] < 0 || charArr[0] > MAX_ACTION)
 		return Action::unknown;
 	return Action(charArr[0]);
+}
+
+
+void Connection::close() {
+	this->connected = false;
 }

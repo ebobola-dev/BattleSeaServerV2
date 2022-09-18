@@ -29,13 +29,13 @@
     <ClInclude Include="Constants.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="Server.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
     <ClInclude Include="Connection.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="Actions.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Server.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>
