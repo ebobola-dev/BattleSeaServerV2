@@ -18,7 +18,7 @@ void Server::start() {
 	int client_addr_size = sizeof(client_addr);
 	while ((client_socket = accept(thisSocket, (sockaddr*)&client_addr, &client_addr_size))) {
 		Connection* newConnection = new Connection(client_socket, client_addr);
-		printf("New connection! - [%u]\n", newConnection->id);
+		printf("New connection! - [%u]\n", newConnection->id); 
 		connections.push_back(newConnection);
 		printf("connections: ");
 		for (int i = 0; i < connections.size(); i++) {
