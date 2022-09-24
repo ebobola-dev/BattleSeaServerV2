@@ -17,10 +17,15 @@ void Server::start() {
 	sockaddr_in client_addr;
 	int client_addr_size = sizeof(client_addr);
 	while ((client_socket = accept(thisSocket, (sockaddr*)&client_addr, &client_addr_size))) {
-		Connection newConnection(client_socket, client_addr);
-		printf("New connection! - [%u]\n", newConnection.id);
-		connections.push_back(&newConnection);
-		thread newConnectionThread(connectionHandler, newConnection);
+		Connection* newConnection = new Connection(client_socket, client_addr);
+		printf("New connection! - [%u]\n", newConnection->id);
+		connections.push_back(newConnection);
+		printf("connections: ");
+		for (int i = 0; i < connections.size(); i++) {
+			printf("[%d] ", connections[i]->id);
+		}
+		printf("\n");
+		thread newConnectionThread(connectionHandler, this, newConnection);
 		newConnectionThread.detach();
 	}
 }
@@ -30,34 +35,52 @@ void Server::close() {
 	WSACleanup();
 }
 
-void Server::connectionHandler(Connection connection) {
-	thread newConnectionThread(pingHandler, connection);
+void Server::connectionHandler(Server* s, Connection* conn) {
+	thread newConnectionThread(pingHandler, s, conn);
 	newConnectionThread.join();
 }
 
-void Server::pingHandler(Connection connection) {
-	while (connection.isConnected()) {
-		connection.send_(Action::ping);
-		clock_t pingTime = clock();
-		cout << "sent" << endl;
-		while (1) {
-			Action act = connection.recv_();
-			cout << "recv: " << (int)act << endl;
-			if (act == Action::pong) break;
+void Server::pingHandler(Server* s, Connection* conn) {
+	int connIndex = s->getConnectionIndexById(conn->id);
+	clock_t pingTime;
+	while (conn->isConnected()) {
+		try {
+			conn->send_(Action::ping);
+			pingTime = clock();
 		}
-		double pongTime = (double)(clock() - pingTime);
-		cout << "pongTime: " << pongTime << endl;
-		/*uint8_t pingArr[8];
-		Action act = connection.recv_(pingArr, 3);
-		if (act != Action::ping) continue;
-		milliseconds ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-		uint64_t ms_ = ms.count();
-		uint64_t connectionTime = 0;
-		for (size_t i = 0; i < 7; i++) {
-			connectionTime += pingArr[i + 1] * (uint64_t)pow(100, 6 - i);
+		catch (ServerError error) {
+			if (error == ServerError::FailedToSend)
+				printf("Failed to ping(-1) [%d]\n", conn->id);
+			if (error == ServerError::ConnectionClosed)
+				printf("Failed to ping(0) [%d]\n", conn->id);
+			printf("Connection [%d] closed\n", conn->id);
+			s->connections.erase(s->connections.begin() + connIndex);
+			return;
 		}
-		uint64_t delta = ms_ - connectionTime;
-		cout << "ms_: " << ms_ << ", connectionTime: " << connectionTime << ", delta: " << delta << endl;*/
+		try {
+			while (1) {
+				Action act = conn->recv_();
+				//cout << "recv: " << (int)act << endl;
+				if (act == Action::pong) break;
+			}
+			uint32_t pongTime = (uint32_t)(clock() - pingTime);
+			printf("[%d] ping: %d ms\n", conn->id, pongTime);
+		}
+		catch (ServerError error) {
+			if (error == ServerError::FailedToSend)
+				printf("Failed to ping(-1)[%d]\n", conn->id);
+			if (error == ServerError::ConnectionClosed)
+				printf("Failed to ping(0) [%d]\n", conn->id);
+			printf("Connection [%d] closed\n", conn->id);
+			s->connections.erase(s->connections.begin() + connIndex);
+		}
 		Sleep(1000);
 	}
+}
+
+int Server::getConnectionIndexById(uint16_t id) {
+	for (int i = 0; i < connections.size(); i++) {
+		if (connections[i]->id == id) return i;
+	}
+	return -1;
 }

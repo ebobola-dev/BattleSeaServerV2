@@ -6,8 +6,6 @@
 #include "winsock2.h"
 #include <windows.h>
 #include <vector>
-//#include <chrono>
-//#include <cmath>
 #include <time.h>
 
 #include "Connection.h"
@@ -21,13 +19,15 @@ class Server {
 	sockaddr_in localAddr;
 	uint32_t port;
 	vector<Connection*> connections;
+
+	int getConnectionIndexById(uint16_t);
 public:
 	Server(uint32_t);
 
 	void start();
 	void close();
 
-	static void connectionHandler(Connection);
-	static void pingHandler(Connection);
+	static void connectionHandler(Server*, Connection*);
+	static void pingHandler(Server*, Connection*);
 };
 

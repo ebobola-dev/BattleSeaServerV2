@@ -19,12 +19,28 @@ void Connection::send_(Action action, uint8_t* byteArr, size_t arrSize) {
 	for (size_t i = 0; i < arrSize; i++) {
 		charArr[i + 1] = byteArr[i];
 	}
-	send(socket_, charArr, arrSize + 1, 0);
+	int sentBytes = send(socket_, charArr, arrSize + 1, 0);
+	if (sentBytes == SOCKET_ERROR) {
+		close();
+		throw ServerError::FailedToSend;
+	}
+	if (sentBytes == 0) {
+		close();
+		throw ServerError::ConnectionClosed;
+	}
 }
 
 Action Connection::recv_(uint8_t* byteArr, size_t arrSize) {
-	char charArr[MAX_BYTE_ARR_SIZE];
+	char charArr[MAX_BYTE_ARR_SIZE]{};
 	int8_t bytesRecieved = recv(socket_, &charArr[0], MAX_BYTE_ARR_SIZE, 0);
+	if(bytesRecieved == SOCKET_ERROR) {
+		close();
+		throw ServerError::FailedToRecv;
+	}
+	if (bytesRecieved == 0) {
+		close();
+		throw ServerError::ConnectionClosed;
+	}
 
 	if (arrSize > 0) {
 		for (size_t i = 0; i < MAX_BYTE_ARR_SIZE; i++)

@@ -6,6 +6,7 @@
 
 #include "Constants.h"
 #include "Actions.h"
+#include "Errors.h"
 
 using namespace std;
 
